@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Payment Instructions and Ledger API
+  description: Backend API for managing professional payment details (TBC/BOG) and booking payment ledger states.
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: /
+    description: Default server
+security:
+  - BearerAuth: []
+paths:
+  /api/v1/professionals/{professionalId}/payment-instructions:
+    get:
+      summary: Get payment instructions for a professional
+      operationId: getPaymentInstructions
+      parameters:
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Professional payment instructions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInstructions'
+        '404':
+          description: Payment instructions not found for the professional
+    put:
+      summary: Set or update payment instructions for a professional
+      operationId: updatePaymentInstructions
+      parameters:
+        - name: professionalId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInstructionsRequest'
+      responses:
+        '200':
+          description: Payment instructions updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInstructions'
+        '400':
+          description: Invalid request parameters
+
+  /api/v1/bookings/{bookingId}/payment-state:
+    get:
+      summary: Get ledger entry / payment state for a booking
+      operationId: getBookingPaymentState
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking payment state retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntry'
+        '404':
+          description: Booking payment state not found
+    post:
+      summary: Create payment state / ledger entry for a booking
+      operationId: createBookingPaymentState
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLedgerEntryRequest'
+      responses:
+        '201':
+          description: Ledger entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntry'
+        '400':
+          description: Invalid request payload
+        '409':
+          description: Ledger entry already exists for this booking
+    patch:
+      summary: Update payment status in ledger without processing transaction
+      operationId: updateBookingPaymentStatus
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentStatusRequest'
+      responses:
+        '200':
+          description: Payment status updated in ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntry'
+        '400':
+          description: Invalid transition or status mismatch
+        '404':
+          description: Booking ledger entry not found
+
+  /api/v1/ledger/entries:
+    get:
+      summary: List ledger entries
+      operationId: listLedgerEntries
+      parameters:
+        - name: professionalId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of ledger entries retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntry'
+        '400':
+          description: Invalid query parameter
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    PaymentInstructionsRequest:
+      type: object
+      required:
+        - accountHolderName
+      properties:
+        accountHolderName:
+          type: string
+          example: Giorgi Beridze
+        tbcIban:
+          type: string
+          example: GE29TB7012345678901234
+        bogIban:
+          type: string
+          example: GE29BG0000000123456789
+        acceptsCash:
+          type: boolean
+          default: true
+        instructionsNote:
+          type: string
+          example: Please include booking ID in transfer description
+
+    PaymentInstructions:
+      type: object
+      required:
+        - professionalId
+        - accountHolderName
+        - acceptsCash
+        - updatedAt
+      properties:
+        professionalId:
+          type: string
+          example: prof-123
+        accountHolderName:
+          type: string
+          example: Giorgi Beridze
+        tbcIban:
+          type: string
+          example: GE29TB7012345678901234
+        bogIban:
+          type: string
+          example: GE29BG0000000123456789
+        acceptsCash:
+          type: boolean
+          example: true
+        instructionsNote:
+          type: string
+          example: Please include booking ID in transfer description
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateLedgerEntryRequest:
+      type: object
+      required:
+        - professionalId
+        - amount
+        - currency
+        - paymentMethod
+      properties:
+        professionalId:
+          type: string
+          example: prof-123
+        amount:
+          type: number
+          format: double
+          example: 50.00
+        currency:
+          type: string
+          default: GEL
+          example: GEL
+        paymentMethod:
+          type: string
+          enum: [TBC_TRANSFER, BOG_TRANSFER, CASH]
+          example: TBC_TRANSFER
+        notes:
+          type: string
+          example: Client selected TBC transfer
+
+    UpdatePaymentStatusRequest:
+      type: object
+      required:
+        - newStatus
+      properties:
+        expectedStatus:
+          type: string
+          enum: [PENDING, MANUALLY_VERIFIED, SETTLED, CANCELLED]
+          example: PENDING
+          description: Current expected status for atomic conditional guard
+        newStatus:
+          type: string
+          enum: [PENDING, MANUALLY_VERIFIED, SETTLED, CANCELLED]
+          example: SETTLED
+        notes:
+          type: string
+          example: Master confirmed transfer received in TBC app
+
+    LedgerEntry:
+      type: object
+      required:
+        - bookingId
+        - professionalId
+        - amount
+        - currency
+        - paymentMethod
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        bookingId:
+          type: string
+          example: book-456
+        professionalId:
+          type: string
+          example: prof-123
+        amount:
+          type: number
+          format: double
+          example: 50.00
+        currency:
+          type: string
+          example: GEL
+        paymentMethod:
+          type: string
+          enum: [TBC_TRANSFER, BOG_TRANSFER, CASH]
+          example: TBC_TRANSFER
+        status:
+          type: string
+          enum: [PENDING, MANUALLY_VERIFIED, SETTLED, CANCELLED]
+          example: PENDING
+        notes:
+          type: string
+          example: Transfer confirmed
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
