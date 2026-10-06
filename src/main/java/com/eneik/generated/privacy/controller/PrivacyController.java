@@ -17,6 +17,7 @@ public class PrivacyController {
     private final PrivacyService privacyService;
     private final Clock clock;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public PrivacyController(PrivacyService privacyService) {
         this(privacyService, Clock.systemUTC());
     }
