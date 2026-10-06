@@ -1,15 +1,15 @@
 <script>
   import CheckoutUI from './components/CheckoutUI.svelte';
   import LedgerUI from './components/LedgerUI.svelte';
-  import PrivacyConsentUI from './components/PrivacyConsentUI.svelte';
+  import VoiceInteractionUI from './components/VoiceInteractionUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'privacy'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice'
 </script>
 
 <div class="app-container">
   <header class="app-header" id="app-header">
     <div class="brand-title">
-      <h1>Georgian Masters Platform · Payment & Ledger</h1>
+      <h1>Georgian Masters Platform · Voice & Checkout</h1>
     </div>
     <nav class="nav-tabs" aria-label="Main Navigation">
       <button
@@ -30,11 +30,11 @@
       </button>
       <button
         type="button"
-        class="tab-btn {activeTab === 'privacy' ? 'active' : ''}"
-        aria-pressed={activeTab === 'privacy'}
-        on:click={() => activeTab = 'privacy'}
+        class="tab-btn {activeTab === 'voice' ? 'active' : ''}"
+        aria-pressed={activeTab === 'voice'}
+        on:click={() => activeTab = 'voice'}
       >
-        Privacy & Recovery
+        Voice Booking (🎙️)
       </button>
     </nav>
   </header>
@@ -44,8 +44,8 @@
       <CheckoutUI />
     {:else if activeTab === 'ledger'}
       <LedgerUI />
-    {:else}
-      <PrivacyConsentUI />
+    {:else if activeTab === 'voice'}
+      <VoiceInteractionUI />
     {/if}
   </main>
 </div>
