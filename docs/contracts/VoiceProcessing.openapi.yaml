@@ -1,0 +1,337 @@
+openapi: 3.0.3
+info:
+  title: Voice Processing & Hands-Free Booking API
+  description: Shared API contract for Georgian voice processing and hands-free booking interactions.
+  version: 1.0.0
+paths:
+  /api/v1/voice/stream/start:
+    post:
+      summary: Start a new voice streaming session
+      description: Initiates a voice session for streaming Georgian audio input from a client (e.g., driver hands-free mode).
+      operationId: startVoiceStream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceStreamStartRequest'
+      responses:
+        '201':
+          description: Voice stream session successfully started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceStreamSession'
+        '400':
+          description: Invalid audio metadata or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/voice/parse:
+    post:
+      summary: Parse voice audio and extract booking intent
+      description: Processes captured audio / stream input and returns parsed intent along with unified booking DTO.
+      operationId: parseVoiceIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceParseRequest'
+      responses:
+        '200':
+          description: Voice intent parsed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceIntentResponse'
+        '400':
+          description: Bad request or unsupported audio parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable entity (audio speech could not be recognized)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/voice/confirm:
+    post:
+      summary: Confirm proposed booking via voice
+      description: Atomically confirms a proposed slot / hold using driver voice response.
+      operationId: confirmVoiceBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceConfirmationRequest'
+      responses:
+        '200':
+          description: Booking successfully confirmed via voice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceIntentResponse'
+        '400':
+          description: Invalid confirmation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (slot no longer available or already confirmed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AudioMetadata:
+      type: object
+      description: Audio format and capture metadata required when starting stream or processing audio.
+      required:
+        - sampleRate
+        - encoding
+        - languageCode
+      properties:
+        sampleRate:
+          type: integer
+          example: 16000
+          description: Audio sample rate in Hertz (e.g. 16000, 44100)
+        encoding:
+          type: string
+          enum:
+            - AUDIO_ENCODING_PCM_16BIT
+            - AUDIO_ENCODING_OPUS
+            - AUDIO_ENCODING_WAV
+          example: AUDIO_ENCODING_PCM_16BIT
+        languageCode:
+          type: string
+          example: ka-GE
+          description: BCP-47 language code (Georgian ka-GE)
+        channels:
+          type: integer
+          default: 1
+          example: 1
+        handsFreeMode:
+          type: boolean
+          default: true
+          example: true
+          description: Flag indicating in-car hands-free operation mode
+
+    VoiceStreamStartRequest:
+      type: object
+      required:
+        - audioMetadata
+      properties:
+        audioMetadata:
+          $ref: '#/components/schemas/AudioMetadata'
+        clientSessionId:
+          type: string
+          example: client-device-12345
+
+    VoiceStreamSession:
+      type: object
+      required:
+        - sessionId
+        - status
+        - streamingUrl
+        - expiresAt
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+            - LISTENING
+            - PROCESSING
+            - CLOSED
+          example: LISTENING
+        streamingUrl:
+          type: string
+          example: wss://api.example.com/v1/voice/stream/550e8400-e29b-41d4-a716-446655440000
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T13:00:00Z'
+
+    VoiceParseRequest:
+      type: object
+      required:
+        - sessionId
+        - audioMetadata
+      properties:
+        sessionId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        audioChunkBase64:
+          type: string
+          description: Optional base64 audio payload if not using websocket stream
+        audioMetadata:
+          $ref: '#/components/schemas/AudioMetadata'
+
+    VoiceIntentResponse:
+      type: object
+      required:
+        - sessionId
+        - transcript
+        - confidence
+        - intentType
+        - booking
+      properties:
+        sessionId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        transcript:
+          type: string
+          example: მინდა ჩაწერა ხვალ 14:00 საათზე
+          description: Recognized Georgian spoken text
+        confidence:
+          type: number
+          format: float
+          example: 0.95
+          description: Speech recognition confidence score (0.0 - 1.0)
+        intentType:
+          type: string
+          enum:
+            - BOOKING_SEARCH
+            - TIME_PROPOSAL
+            - BOOKING_CONFIRMATION
+            - UNKNOWN
+          example: TIME_PROPOSAL
+        booking:
+          $ref: '#/components/schemas/UnifiedBookingDto'
+        suggestedSlots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlotDto'
+        spokenTextResponse:
+          type: string
+          example: გთავაზობთ ხვალ 14:00 საათს, გსურთ დადასტურება?
+          description: Georgian text for text-to-speech audio feedback
+
+    VoiceConfirmationRequest:
+      type: object
+      required:
+        - sessionId
+        - bookingId
+      properties:
+        sessionId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bookingId:
+          type: string
+          example: b1234567-e29b-41d4-a716-446655440000
+        voiceConfirmationToken:
+          type: string
+          example: token-xyz789
+
+    UnifiedBookingDto:
+      type: object
+      description: Unified DTO representing booking details across voice, web, and agent APIs.
+      required:
+        - bookingId
+        - masterId
+        - serviceId
+        - slot
+        - priceGEL
+        - status
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          example: b1234567-e29b-41d4-a716-446655440000
+        masterId:
+          type: string
+          example: master-tbilisi-01
+        masterName:
+          type: string
+          example: Giorgi Beridze
+        serviceId:
+          type: string
+          example: srv-haircut-men
+        serviceName:
+          type: string
+          example: Men Haircut
+        clientPhoneNumber:
+          type: string
+          example: '+995599123456'
+        slot:
+          $ref: '#/components/schemas/SlotDto'
+        priceGEL:
+          type: number
+          format: double
+          example: 45.00
+          description: Price in Georgian Lari (GEL / ₾)
+        currency:
+          type: string
+          default: GEL
+          example: GEL
+        status:
+          type: string
+          enum:
+            - PROPOSED
+            - HOLD
+            - CONFIRMED
+            - CANCELLED
+          example: PROPOSED
+        holdExpiresAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:45:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:30:00Z'
+
+    SlotDto:
+      type: object
+      required:
+        - startAt
+        - endAt
+      properties:
+        startAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T14:00:00+04:00'
+        endAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T15:00:00+04:00'
+        available:
+          type: boolean
+          default: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: INVALID_AUDIO_FORMAT
+        message:
+          type: string
+          example: Sample rate 8000 Hz is not supported for Georgian speech recognition
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:30:00Z'
+        details:
+          type: object
+          additionalProperties: true
