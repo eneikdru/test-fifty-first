@@ -1,0 +1,12 @@
+{
+  "testsRun": 26,
+  "testsPassed": 26,
+  "testsFailed": 0,
+  "acceptanceCriteriaVerified": [
+    "Given pre-recorded Georgian booking requests, When fed to the pipeline, Then bookings are created.",
+    "Given noisy audio, When tested, Then fallback behavior is verified."
+  ],
+  "coverageDeltaPercent": 10.0,
+  "verdict": "pass",
+  "notes": "Verified voice booking pipeline with pre-recorded Georgian booking requests and fallback behavior for noisy/invalid audio."
+}
