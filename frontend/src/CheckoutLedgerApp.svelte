@@ -1,8 +1,9 @@
 <script>
   import CheckoutUI from './components/CheckoutUI.svelte';
   import LedgerUI from './components/LedgerUI.svelte';
+  import PrivacyConsentUI from './components/PrivacyConsentUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'privacy'
 </script>
 
 <div class="app-container">
@@ -27,14 +28,24 @@
       >
         Professional Ledger
       </button>
+      <button
+        type="button"
+        class="tab-btn {activeTab === 'privacy' ? 'active' : ''}"
+        aria-pressed={activeTab === 'privacy'}
+        on:click={() => activeTab = 'privacy'}
+      >
+        Privacy & Recovery
+      </button>
     </nav>
   </header>
 
   <main class="app-main" id="main-content">
     {#if activeTab === 'checkout'}
       <CheckoutUI />
-    {:else}
+    {:else if activeTab === 'ledger'}
       <LedgerUI />
+    {:else}
+      <PrivacyConsentUI />
     {/if}
   </main>
 </div>

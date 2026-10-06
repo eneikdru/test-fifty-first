@@ -1,0 +1,30 @@
+[
+  {
+    "id": "app-header",
+    "left": 0,
+    "top": 0,
+    "width": 375,
+    "height": 154
+  },
+  {
+    "id": "privacy-section",
+    "left": 16,
+    "top": 178,
+    "width": 343,
+    "height": 1617
+  },
+  {
+    "id": "account-recovery-section",
+    "left": 16,
+    "top": 641,
+    "width": 463,
+    "height": 372
+  },
+  {
+    "id": "privacy-tools-section",
+    "left": 16,
+    "top": 1037,
+    "width": 463,
+    "height": 757
+  }
+]
