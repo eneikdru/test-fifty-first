@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: Reminders, Notifications and Messenger Actions API
+  description: Shared API contract for notifications, instant booking reminders, messenger webhooks (Facebook Messenger & WhatsApp), and inline confirmation, cancellation, and reschedule actions.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Primary API Base Path
+
+security:
+  - BearerAuth: []
+
+paths:
+  /reminders/send:
+    post:
+      summary: Schedule or Send Booking Reminder Notification
+      description: Sends an instant or scheduled reminder notification to a client or master via Facebook Messenger or WhatsApp.
+      operationId: sendReminder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationReminderRequest'
+      responses:
+        '202':
+          description: Reminder notification accepted and queued for delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationReminderResponse'
+        '400':
+          description: Invalid notification request body or unsupported channel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reminders/actions:
+    post:
+      summary: Handle Inline Reminder Quick Action
+      description: Processes inline quick button actions (CONFIRM, CANCEL, RESCHEDULE) triggered directly from Messenger or WhatsApp notifications.
+      operationId: handleReminderAction
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderActionRequest'
+      responses:
+        '200':
+          description: Action successfully processed and booking status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderActionResponse'
+        '400':
+          description: Invalid action type or payload parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Target booking or reminder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (e.g. booking already cancelled or slot unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{bookingId}/reschedule:
+    post:
+      summary: Request Booking Reschedule
+      description: Validates and initiates a reschedule request for an existing appointment slot.
+      operationId: rescheduleBooking
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the booking to reschedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleRequest'
+      responses:
+        '200':
+          description: Reschedule request validated and processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RescheduleResponse'
+        '400':
+          description: Invalid reschedule payload structure or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - requested new slot is not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/messenger:
+    get:
+      summary: Verify Facebook Messenger Webhook Endpoint
+      description: Handles Facebook Webhook verification challenge (hub.mode, hub.verify_token, hub.challenge).
+      operationId: verifyMessengerWebhook
+      security: []
+      parameters:
+        - in: query
+          name: hub.mode
+          required: true
+          schema:
+            type: string
+            enum: [subscribe]
+          description: Webhook mode
+        - in: query
+          name: hub.verify_token
+          required: true
+          schema:
+            type: string
+          description: Shared secret verification token
+        - in: query
+          name: hub.challenge
+          required: true
+          schema:
+            type: string
+          description: Random challenge string sent by Facebook
+      responses:
+        '200':
+          description: Webhook verified successfully, returns hub.challenge string
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "1158201444"
+        '403':
+          description: Invalid verify token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Receive Facebook Messenger Webhook Events
+      description: Ingests incoming messaging events, postbacks, and quick reply actions from Facebook Messenger.
+      operationId: processMessengerWebhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessengerWebhookPayload'
+      responses:
+        '200':
+          description: Webhook event received and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "EVENT_RECEIVED"
+        '400':
+          description: Malformed webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/whatsapp:
+    post:
+      summary: Receive WhatsApp Cloud API Webhook Events
+      description: Ingests incoming messages, interactive button replies, and status updates from WhatsApp Business Cloud API.
+      operationId: processWhatsAppWebhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppWebhookPayload'
+      responses:
+        '200':
+          description: Webhook event received and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "EVENT_RECEIVED"
+        '400':
+          description: Malformed WhatsApp webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RescheduleRequest:
+      type: object
+      required:
+        - bookingId
+        - requestedStartTime
+        - requestedEndTime
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          description: ID of the booking to reschedule
+        requestedStartTime:
+          type: string
+          format: date-time
+          description: Requested new start time in ISO-8601 format
+        requestedEndTime:
+          type: string
+          format: date-time
+          description: Requested new end time in ISO-8601 format
+        reason:
+          type: string
+          maxLength: 255
+          description: Optional reason for rescheduling
+        clientPhoneNumber:
+          type: string
+          example: "+995599123456"
+          description: Georgian client phone number (+995)
+        channel:
+          type: string
+          enum: [MESSENGER, WHATSAPP, WEB]
+          default: MESSENGER
+          description: Channel from which the reschedule request originated
+
+    RescheduleResponse:
+      type: object
+      required:
+        - bookingId
+        - status
+        - newStartTime
+        - newEndTime
+        - updatedAt
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING_MASTER_CONFIRMATION, CONFIRMED, REJECTED]
+          description: Status of the reschedule operation
+        newStartTime:
+          type: string
+          format: date-time
+        newEndTime:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: "Reschedule request successfully submitted and pending master confirmation."
+
+    NotificationReminderRequest:
+      type: object
+      required:
+        - bookingId
+        - recipientPhoneOrId
+        - channel
+        - reminderType
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        recipientPhoneOrId:
+          type: string
+          example: "+995599123456"
+          description: Recipient's Georgian phone number (+995) or Messenger PSID
+        channel:
+          type: string
+          enum: [MESSENGER, WHATSAPP]
+        reminderType:
+          type: string
+          enum: [UPCOMING_BOOKING, CONFIRMATION_PROMPT, CANCELLATION_NOTICE, RESCHEDULE_NOTICE]
+        scheduledFor:
+          type: string
+          format: date-time
+          description: Timestamp for scheduled dispatch (or omitted for immediate send)
+
+    NotificationReminderResponse:
+      type: object
+      required:
+        - reminderId
+        - bookingId
+        - status
+        - channel
+        - sentAt
+      properties:
+        reminderId:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, DELIVERED, FAILED]
+        channel:
+          type: string
+          enum: [MESSENGER, WHATSAPP]
+        sentAt:
+          type: string
+          format: date-time
+
+    ReminderActionRequest:
+      type: object
+      required:
+        - bookingId
+        - actionType
+        - channel
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        actionType:
+          type: string
+          enum: [CONFIRM, CANCEL, RESCHEDULE]
+        channel:
+          type: string
+          enum: [MESSENGER, WHATSAPP]
+        rescheduleDetails:
+          $ref: '#/components/schemas/RescheduleRequest'
+
+    ReminderActionResponse:
+      type: object
+      required:
+        - actionId
+        - bookingId
+        - actionType
+        - bookingStatus
+        - processedAt
+      properties:
+        actionId:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        actionType:
+          type: string
+          enum: [CONFIRM, CANCEL, RESCHEDULE]
+        bookingStatus:
+          type: string
+          enum: [CONFIRMED, CANCELLED, RESCHEDULE_PENDING]
+        processedAt:
+          type: string
+          format: date-time
+        confirmationMessage:
+          type: string
+          example: "Your appointment has been confirmed."
+
+    MessengerWebhookPayload:
+      type: object
+      required:
+        - object
+        - entry
+      properties:
+        object:
+          type: string
+          example: "page"
+        entry:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessengerEntry'
+
+    MessengerEntry:
+      type: object
+      required:
+        - id
+        - messaging
+      properties:
+        id:
+          type: string
+          example: "page-id-12345"
+        time:
+          type: integer
+          example: 1728219600
+        messaging:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessengerMessagingEvent'
+
+    MessengerMessagingEvent:
+      type: object
+      properties:
+        sender:
+          type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              example: "psid-user-67890"
+        recipient:
+          type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              example: "page-id-12345"
+        timestamp:
+          type: integer
+          example: 1728219600
+        message:
+          type: object
+          properties:
+            mid:
+              type: string
+            text:
+              type: string
+            quick_reply:
+              type: object
+              properties:
+                payload:
+                  type: string
+                  example: "ACTION_CONFIRM_b1234567"
+        postback:
+          $ref: '#/components/schemas/MessengerPostback'
+
+    MessengerPostback:
+      type: object
+      required:
+        - payload
+      properties:
+        title:
+          type: string
+          example: "Confirm Booking"
+        payload:
+          type: string
+          example: "ACTION_CONFIRM_b1234567"
+
+    WhatsAppWebhookPayload:
+      type: object
+      required:
+        - object
+        - entry
+      properties:
+        object:
+          type: string
+          example: "whatsapp_business_account"
+        entry:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppEntry'
+
+    WhatsAppEntry:
+      type: object
+      required:
+        - id
+        - changes
+      properties:
+        id:
+          type: string
+          example: "wa-account-123"
+        changes:
+          type: array
+          items:
+            type: object
+            required:
+              - value
+              - field
+            properties:
+              field:
+                type: string
+                example: "messages"
+              value:
+                type: object
+                properties:
+                  messaging_product:
+                    type: string
+                    example: "whatsapp"
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from:
+                          type: string
+                          example: "995599123456"
+                        id:
+                          type: string
+                          example: "wamid.HBgM..."
+                        type:
+                          type: string
+                          example: "button"
+                        button:
+                          type: object
+                          properties:
+                            text:
+                              type: string
+                            payload:
+                              type: string
+                              example: "ACTION_CANCEL_b1234567"
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: "INVALID_PAYLOAD"
+        message:
+          type: string
+          example: "Reschedule request payload is missing required field requestedStartTime"
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            type: string
