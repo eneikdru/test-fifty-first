@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Ledger Updates API Contract
+  description: Shared API contract for payment tracking and ledger updates, defining payment status transitions ('paid', 'unpaid') and payment status inclusion in booking queries.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Primary API Base Path
+
+paths:
+  /api/v1/ledger/bookings:
+    get:
+      summary: Query bookings with payment status tracking
+      description: Retrieves a list of bookings including their associated payment status ('paid' or 'unpaid').
+      operationId: queryLedgerBookings
+      parameters:
+        - in: query
+          name: masterId
+          required: false
+          schema:
+            type: string
+          description: Filter bookings by urban master ID
+        - in: query
+          name: paymentStatus
+          required: false
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+          description: Filter bookings by payment status ('paid' or 'unpaid')
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Page index (0-based)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Page size limit
+      responses:
+        '200':
+          description: Bookings successfully retrieved with payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingListLedgerResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ledger/bookings/{bookingId}:
+    get:
+      summary: Get booking details by ID including payment status
+      description: Retrieves single booking ledger entry with payment status and method details.
+      operationId: getBookingLedger
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the booking
+      responses:
+        '200':
+          description: Booking ledger entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingLedgerItem'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ledger/bookings/{bookingId}/payment-status:
+    put:
+      summary: Update payment status for a booking in the ledger
+      description: Updates the payment status for a specific booking, allowing 'paid' and 'unpaid' states.
+      operationId: updateBookingPaymentStatus
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the booking to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStatusUpdateRequest'
+      responses:
+        '200':
+          description: Payment status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingLedgerItem'
+        '400':
+          description: Invalid payment status or request body payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict or invalid payment status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Partially update payment status for a booking in the ledger
+      description: Partially updates payment status or payment metadata for a specific booking.
+      operationId: patchBookingPaymentStatus
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the booking to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStatusUpdateRequest'
+      responses:
+        '200':
+          description: Payment status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingLedgerItem'
+        '400':
+          description: Invalid payment status or request body payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict or invalid payment status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    PaymentStatus:
+      type: string
+      enum:
+        - paid
+        - unpaid
+      example: paid
+      description: Payment state in ledger tracking ('paid' or 'unpaid').
+
+    PaymentMethod:
+      type: string
+      enum:
+        - TBC_TRANSFER
+        - BOG_TRANSFER
+        - CASH
+      example: TBC_TRANSFER
+      description: Local payment method in Georgia (TBC, Bank of Georgia transfer, or Cash).
+
+    PaymentStatusUpdateRequest:
+      type: object
+      required:
+        - paymentStatus
+      properties:
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        amountGEL:
+          type: number
+          format: double
+          example: 50.00
+          description: Payment amount in Georgian Lari (GEL / ₾)
+        transactionReference:
+          type: string
+          example: TXN-TBC-987654
+          description: Bank transaction reference number
+        notes:
+          type: string
+          example: Direct transfer via TBC Pay
+
+    BookingLedgerItem:
+      type: object
+      required:
+        - bookingId
+        - masterId
+        - serviceName
+        - priceGEL
+        - paymentStatus
+        - createdAt
+        - updatedAt
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        masterId:
+          type: string
+          example: master-tbilisi-01
+        clientId:
+          type: string
+          example: client-georgia-02
+        serviceName:
+          type: string
+          example: Master Hair Styling
+        priceGEL:
+          type: number
+          format: double
+          example: 50.00
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        transactionReference:
+          type: string
+          example: TXN-TBC-987654
+        notes:
+          type: string
+          example: Settled on site
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:05:00Z'
+
+    BookingListLedgerResponse:
+      type: object
+      required:
+        - bookings
+        - totalCount
+        - page
+        - limit
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingLedgerItem'
+        totalCount:
+          type: integer
+          example: 1
+        page:
+          type: integer
+          example: 0
+        limit:
+          type: integer
+          example: 20
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: INVALID_PAYMENT_STATUS
+        message:
+          type: string
+          example: Payment status must be either 'paid' or 'unpaid'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-06T12:05:00Z'
+        details:
+          type: array
+          items:
+            type: string
