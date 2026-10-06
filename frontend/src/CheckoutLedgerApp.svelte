@@ -1,9 +1,20 @@
 <script>
+  import { onMount } from 'svelte';
   import CheckoutUI from './components/CheckoutUI.svelte';
   import LedgerUI from './components/LedgerUI.svelte';
   import VoiceInteractionUI from './components/VoiceInteractionUI.svelte';
+  import RescheduleCancelUI from './components/RescheduleCancelUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule'
+
+  onMount(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
+        activeTab = 'reschedule';
+      }
+    }
+  });
 </script>
 
 <div class="app-container">
@@ -36,6 +47,14 @@
       >
         Voice Booking (🎙️)
       </button>
+      <button
+        type="button"
+        class="tab-btn {activeTab === 'reschedule' ? 'active' : ''}"
+        aria-pressed={activeTab === 'reschedule'}
+        on:click={() => activeTab = 'reschedule'}
+      >
+        Reschedule & Cancel (🗓️)
+      </button>
     </nav>
   </header>
 
@@ -46,6 +65,8 @@
       <LedgerUI />
     {:else if activeTab === 'voice'}
       <VoiceInteractionUI />
+    {:else if activeTab === 'reschedule'}
+      <RescheduleCancelUI />
     {/if}
   </main>
 </div>
@@ -57,40 +78,56 @@
     background-color: #f6f8fa;
     color: #1f2328;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
   }
 
   .app-container {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .app-header {
     background-color: #0969da;
     color: #ffffff;
-    padding: 16px 24px;
+    padding: 16px;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .app-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+    }
   }
 
   .brand-title h1 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 600;
   }
 
   .nav-tabs {
     display: flex;
-    gap: 12px;
-    margin-top: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
   }
 
-  @media (min-width: 600px) {
+  @media (min-width: 768px) {
     .nav-tabs {
-      margin-top: 0;
+      width: auto;
     }
   }
 
@@ -99,8 +136,8 @@
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 0.9rem;
+    padding: 6px 12px;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -122,7 +159,15 @@
   }
 
   .app-main {
-    padding: 24px 16px;
+    padding: 16px;
     flex: 1;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .app-main {
+      padding: 24px 16px;
+    }
   }
 </style>
