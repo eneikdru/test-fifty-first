@@ -3,6 +3,9 @@ info:
   title: Privacy Requests API Contract
   description: Shared API contract for GDPR and privacy compliance operations including data export and data erasure for masters and clients in Georgia urban booking platform.
   version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 servers:
   - url: /api/v1
     description: Primary API Base Path
