@@ -4,14 +4,15 @@ import fs from 'fs';
 import path from 'path';
 
 async function run() {
-  const outputDir = path.resolve('../.eneik/records/design-check-1e2ff278-4cf1-4e39-8b07-7e849434313f');
+  const outputDir = path.resolve('../.eneik/records/design-check-3c05e85a-d3e7-4757-aa75-575839a70c07');
   fs.mkdirSync(outputDir, { recursive: true });
 
   console.log('Starting preview server...');
-  const server = spawn('npm', ['run', 'preview', '--', '--port', '4173'], {
+  const npmPath = '/home/jules/.nvm/versions/node/v22.22.1/bin/npm';
+  const server = spawn(npmPath, ['run', 'preview', '--', '--port', '4173'], {
     cwd: path.resolve('.'),
     stdio: 'inherit',
-    shell: true
+    shell: '/usr/bin/bash'
   });
 
   // Give server time to start
@@ -24,23 +25,24 @@ async function run() {
     // 1. Desktop Screenshot (1440px)
     const pageDesktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await pageDesktop.goto('http://localhost:4173');
-    // Click "Privacy & Recovery" tab
-    await pageDesktop.click('button:has-text("Privacy & Recovery")');
-    await pageDesktop.waitForSelector('#privacy-section');
+    // Switch to Voice tab
+    const voiceTabBtn = pageDesktop.locator('button:has-text("Voice Booking")');
+    await voiceTabBtn.click();
+    await pageDesktop.waitForSelector('#voice-interaction-section');
     await pageDesktop.screenshot({ path: path.join(outputDir, 'desktop-1440.png'), fullPage: true });
     console.log('Desktop screenshot saved.');
 
     // 2. Mobile Screenshot (375px)
     const pageMobile = await browser.newPage({ viewport: { width: 375, height: 667 } });
     await pageMobile.goto('http://localhost:4173');
-    // Click "Privacy & Recovery" tab
-    await pageMobile.click('button:has-text("Privacy & Recovery")');
-    await pageMobile.waitForSelector('#privacy-section');
+    const voiceTabBtnMobile = pageMobile.locator('button:has-text("Voice Booking")');
+    await voiceTabBtnMobile.click();
+    await pageMobile.waitForSelector('#voice-interaction-section');
     await pageMobile.screenshot({ path: path.join(outputDir, 'mobile-375.png'), fullPage: true });
     console.log('Mobile screenshot saved.');
 
     // 3. Layout Check JSON (bounding boxes on 375px mobile)
-    const layoutElements = ['#app-header', '#privacy-section', '#account-recovery-section', '#privacy-tools-section'];
+    const layoutElements = ['#app-header', '#voice-heading', '#voice-interaction-section'];
     const layoutCheck = [];
 
     for (const selector of layoutElements) {
