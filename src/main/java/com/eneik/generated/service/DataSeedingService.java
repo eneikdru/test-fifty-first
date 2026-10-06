@@ -6,6 +6,7 @@ import com.eneik.generated.domain.MasterProfile;
 import com.eneik.generated.domain.MasterProfileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +25,17 @@ public class DataSeedingService {
     private final Clock clock;
 
     public DataSeedingService(MasterProfileRepository masterProfileRepository,
+                              AvailabilitySlotRepository availabilitySlotRepository) {
+        this(masterProfileRepository, availabilitySlotRepository, Clock.systemUTC());
+    }
+
+    @Autowired
+    public DataSeedingService(MasterProfileRepository masterProfileRepository,
                               AvailabilitySlotRepository availabilitySlotRepository,
                               Clock clock) {
         this.masterProfileRepository = masterProfileRepository;
         this.availabilitySlotRepository = availabilitySlotRepository;
-        this.clock = clock;
+        this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
     @Transactional

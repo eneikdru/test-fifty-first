@@ -4,6 +4,7 @@ import com.eneik.generated.domain.AvailabilitySlot;
 import com.eneik.generated.domain.AvailabilitySlotRepository;
 import com.eneik.generated.domain.Booking;
 import com.eneik.generated.domain.BookingRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +21,19 @@ public class BookingService {
 
     public BookingService(AvailabilitySlotRepository availabilitySlotRepository,
                           BookingRepository bookingRepository,
+                          TelemetryService telemetryService) {
+        this(availabilitySlotRepository, bookingRepository, telemetryService, Clock.systemUTC());
+    }
+
+    @Autowired
+    public BookingService(AvailabilitySlotRepository availabilitySlotRepository,
+                          BookingRepository bookingRepository,
                           TelemetryService telemetryService,
                           Clock clock) {
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.bookingRepository = bookingRepository;
         this.telemetryService = telemetryService;
-        this.clock = clock;
+        this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
     @Transactional

@@ -4,6 +4,7 @@ import com.eneik.generated.analytics.AnalyticsEvent;
 import com.eneik.generated.analytics.AnalyticsEventRepository;
 import com.eneik.generated.analytics.SystemMetric;
 import com.eneik.generated.analytics.SystemMetricRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +22,17 @@ public class TelemetryService {
     private final Clock clock;
 
     public TelemetryService(AnalyticsEventRepository analyticsEventRepository,
+                            SystemMetricRepository systemMetricRepository) {
+        this(analyticsEventRepository, systemMetricRepository, Clock.systemUTC());
+    }
+
+    @Autowired
+    public TelemetryService(AnalyticsEventRepository analyticsEventRepository,
                             SystemMetricRepository systemMetricRepository,
                             Clock clock) {
         this.analyticsEventRepository = analyticsEventRepository;
         this.systemMetricRepository = systemMetricRepository;
-        this.clock = clock;
+        this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
     @Transactional
