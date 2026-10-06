@@ -8,7 +8,7 @@ decisions taken in one artifact.
 ## Declared services
 
 ```yaml
-datastore: UNDECLARED
+datastore: postgresql:15
 ```
 
 `UNDECLARED` is not a placeholder to be ignored. It is the open question, written down so
