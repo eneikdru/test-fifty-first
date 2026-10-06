@@ -1,0 +1,513 @@
+openapi: 3.0.3
+info:
+  title: Privacy Requests API Contract
+  description: Shared API contract for GDPR and privacy compliance operations including data export and data erasure for masters and clients in Georgia urban booking platform.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Primary API Base Path
+
+security:
+  - BearerAuth: []
+
+paths:
+  /privacy/exports:
+    post:
+      summary: Request Data Export
+      description: |
+        Initiates a privacy data export request for the authenticated user or master.
+        Requires valid authentication credentials (`Authorization: Bearer <token>`).
+      operationId: createDataExport
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: X-Request-ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Unique correlation ID for request tracing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyExportRequest'
+      responses:
+        '202':
+          description: Data export request accepted for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyExportStatusResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /privacy/exports/{exportId}:
+    get:
+      summary: Get Data Export Status and Payload
+      description: |
+        Retrieves the status and standardized JSON payload of a previously requested data export.
+        Requires valid authentication credentials (`Authorization: Bearer <token>`).
+      operationId: getDataExport
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: exportId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the data export request
+        - in: header
+          name: X-Request-ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Unique correlation ID for request tracing
+      responses:
+        '200':
+          description: Successfully retrieved data export payload and status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyExportStatusResponse'
+        '401':
+          description: Unauthorized - missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Data export request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /privacy/erasures:
+    post:
+      summary: Request Account and Data Erasure
+      description: |
+        Initiates account and personal data erasure (right to be forgotten) for the authenticated user or master.
+        Requires valid authentication credentials (`Authorization: Bearer <token>`).
+      operationId: createDataErasure
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: X-Request-ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Unique correlation ID for request tracing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyErasureRequest'
+      responses:
+        '202':
+          description: Data erasure request accepted and scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyErasureResponse'
+        '400':
+          description: Invalid erasure request parameters or missing confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid authentication token header (Authorization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /privacy/erasures/{erasureRequestId}:
+    get:
+      summary: Get Erasure Request Status
+      description: |
+        Retrieves the execution status of a previously submitted data erasure request.
+        Requires valid authentication credentials (`Authorization: Bearer <token>`).
+      operationId: getErasureStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: erasureRequestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the erasure request
+        - in: header
+          name: X-Request-ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Unique correlation ID for request tracing
+      responses:
+        '200':
+          description: Successfully retrieved erasure request status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyErasureResponse'
+        '401':
+          description: Unauthorized - missing or invalid authentication token header (Authorization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Erasure request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JSON Web Token (JWT) provided in the HTTP `Authorization` header using the Bearer scheme.
+        Format: `Authorization: Bearer <token>`
+
+  schemas:
+    PrivacyExportRequest:
+      type: object
+      required:
+        - format
+      properties:
+        format:
+          type: string
+          enum: [JSON]
+          default: JSON
+          description: Format for exported personal data payload
+        includeMedia:
+          type: boolean
+          default: true
+          description: Whether to include imported Facebook page photos and media metadata
+        callbackUrl:
+          type: string
+          format: uri
+          description: Optional webhook URL to notify upon export completion
+
+    PrivacyExportStatusResponse:
+      type: object
+      required:
+        - exportId
+        - userId
+        - status
+        - requestedAt
+      properties:
+        exportId:
+          type: string
+          format: uuid
+          description: Unique identifier for the export request
+        userId:
+          type: string
+          description: Identifier of the user requesting export
+        status:
+          type: string
+          enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
+          description: Current lifecycle status of the export operation
+        requestedAt:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp when export was requested
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO-8601 timestamp when export completed
+        downloadUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Temporary download URL for the exported archive if applicable
+        payload:
+          $ref: '#/components/schemas/PrivacyExportPayload'
+
+    PrivacyExportPayload:
+      type: object
+      description: Standardized JSON payload structure containing all exportable user and master data
+      required:
+        - schemaVersion
+        - userProfile
+        - bookings
+      properties:
+        schemaVersion:
+          type: string
+          example: "1.0"
+          description: Version of the privacy data export schema
+        exportedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the export payload was generated
+        userProfile:
+          $ref: '#/components/schemas/UserProfileExport'
+        masterProfile:
+          $ref: '#/components/schemas/MasterProfileExport'
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingExportItem'
+        voiceRequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceBookingExportItem'
+        messengerNotifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationLogExportItem'
+
+    UserProfileExport:
+      type: object
+      required:
+        - id
+        - phone
+      properties:
+        id:
+          type: string
+          description: User unique identifier
+        phone:
+          type: string
+          example: "+995555123456"
+          description: Georgian phone number (+995)
+        facebookId:
+          type: string
+          nullable: true
+          description: Facebook profile ID if linked via 1-click FB login
+        fullName:
+          type: string
+          nullable: true
+          description: User's full name
+        city:
+          type: string
+          enum: [TBILISI, BATUMI, KUTAISI]
+          description: Primary Georgian city location
+        createdAt:
+          type: string
+          format: date-time
+
+    MasterProfileExport:
+      type: object
+      required:
+        - masterId
+        - publicProfileUrl
+        - services
+      properties:
+        masterId:
+          type: string
+        facebookPageId:
+          type: string
+          nullable: true
+          description: Linked Facebook Business Page ID
+        publicProfileUrl:
+          type: string
+          format: uri
+          description: Public web URL of the master's profile
+        description:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        importedPhotos:
+          type: array
+          items:
+            type: string
+            format: uri
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterServiceExport'
+
+    MasterServiceExport:
+      type: object
+      required:
+        - serviceId
+        - name
+        - priceGel
+        - durationMinutes
+      properties:
+        serviceId:
+          type: string
+        name:
+          type: string
+        priceGel:
+          type: number
+          format: double
+          description: Service price in Georgian Lari (GEL / ₾)
+        durationMinutes:
+          type: integer
+          description: Duration in minutes
+
+    BookingExportItem:
+      type: object
+      required:
+        - bookingId
+        - masterId
+        - serviceName
+        - priceGel
+        - startTime
+        - endTime
+        - status
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        masterId:
+          type: string
+        serviceName:
+          type: string
+        priceGel:
+          type: number
+          format: double
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [HELD, CONFIRMED, CANCELLED, COMPLETED]
+        paymentMethod:
+          type: string
+          enum: [TBC_TRANSFER, BOG_TRANSFER, CASH]
+
+    VoiceBookingExportItem:
+      type: object
+      required:
+        - requestId
+        - transcribedText
+        - createdAt
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        transcribedText:
+          type: string
+          description: Georgian language voice input transcript
+        audioDurationSeconds:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationLogExportItem:
+      type: object
+      required:
+        - channel
+        - messageType
+        - sentAt
+      properties:
+        channel:
+          type: string
+          enum: [MESSENGER, WHATSAPP]
+        messageType:
+          type: string
+          enum: [BOOKING_NOTIFICATION, CONFIRMATION_PROMPT, CANCELLATION_NOTICE]
+        sentAt:
+          type: string
+          format: date-time
+
+    PrivacyErasureRequest:
+      type: object
+      required:
+        - confirmErasure
+        - erasureScope
+      properties:
+        confirmErasure:
+          type: boolean
+          description: Explicit confirmation that the user acknowledges irrevocable data deletion/anonymization
+        erasureScope:
+          type: string
+          enum: [ALL_DATA, ACCOUNT_ONLY]
+          default: ALL_DATA
+          description: Scope of data erasure requested
+        reason:
+          type: string
+          maxLength: 500
+          description: Optional reason for erasure request
+
+    PrivacyErasureResponse:
+      type: object
+      required:
+        - erasureRequestId
+        - userId
+        - status
+        - requestedAt
+        - scheduledErasureTime
+      properties:
+        erasureRequestId:
+          type: string
+          format: uuid
+          description: Unique tracking ID for the erasure request
+        userId:
+          type: string
+          description: ID of user undergoing erasure
+        status:
+          type: string
+          enum: [PENDING, SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
+          description: Status of the erasure pipeline
+        requestedAt:
+          type: string
+          format: date-time
+        scheduledErasureTime:
+          type: string
+          format: date-time
+          description: Scheduled timestamp when data hard-deletion / anonymization will occur
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        confirmationCode:
+          type: string
+          description: Unique confirmation reference code for audit compliance
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          example: "Missing or invalid Authorization header"
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: array
+          items:
+            type: string
