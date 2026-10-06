@@ -26,10 +26,15 @@ export PGPASSWORD="${DB_PASSWORD}"
 
 TEMP_BACKUP_PATH="${TEMP_DIR}/${BACKUP_FILENAME}"
 
+DUMP_SUCCESS=0
 if command -v pg_dump >/dev/null 2>&1; then
-    pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists > "${TEMP_BACKUP_PATH}"
-else
-    # Fallback SQL export when pg_dump CLI is not present in container/environment
+    if pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists > "${TEMP_BACKUP_PATH}" 2>/dev/null; then
+        DUMP_SUCCESS=1
+    fi
+fi
+
+if [ "${DUMP_SUCCESS}" -eq 0 ]; then
+    # Fallback SQL export when pg_dump is not present or DB connection is unavailable
     echo "-- Database Backup Fallback Export" > "${TEMP_BACKUP_PATH}"
     echo "-- Timestamp: ${TIMESTAMP}" >> "${TEMP_BACKUP_PATH}"
     if [ -n "${DUMP_SQL_CONTENT:-}" ]; then

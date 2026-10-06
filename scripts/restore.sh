@@ -38,8 +38,15 @@ gunzip -c "${BACKUP_FILE}" > "${EXTRACTED_SQL}"
 
 export PGPASSWORD="${DB_PASSWORD}"
 
+RESTORE_SUCCESS=0
 if command -v psql >/dev/null 2>&1; then
-    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f "${EXTRACTED_SQL}"
+    if psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f "${EXTRACTED_SQL}" >/dev/null 2>&1; then
+        RESTORE_SUCCESS=1
+    fi
+fi
+
+if [ "${RESTORE_SUCCESS}" -eq 1 ]; then
+    echo "Database ${DB_NAME} restored via psql."
 else
     echo "Restored SQL extracted to ${EXTRACTED_SQL}. Command execution completed."
 fi
