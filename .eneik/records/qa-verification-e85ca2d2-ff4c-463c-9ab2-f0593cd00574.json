@@ -1,0 +1,13 @@
+{
+  "testsRun": 27,
+  "testsPassed": 27,
+  "testsFailed": 0,
+  "acceptanceCriteriaVerified": [
+    "Given a test database backup, When a restore is actively performed, Then data integrity is verified.",
+    "Given the seeded instance, When a tester browses, Then all links in the booking path are walkable.",
+    "Given this role completes the Atomic Goal, When the relevant verification command runs, Then the change passes without unrelated scope."
+  ],
+  "coverageDeltaPercent": null,
+  "verdict": "pass",
+  "notes": "Backup restore data integrity verified and seeded booking path walkability tested end-to-end."
+}
