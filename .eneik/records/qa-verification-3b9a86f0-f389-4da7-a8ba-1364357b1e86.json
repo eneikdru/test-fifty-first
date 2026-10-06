@@ -1,0 +1,12 @@
+{
+  "testsRun": 2,
+  "testsPassed": 2,
+  "testsFailed": 0,
+  "acceptanceCriteriaVerified": [
+    "Given a completed E2E booking, When checking the confirmation page, Then TBC/BOG details are present.",
+    "Given a professional marks a booking as paid, When queried, Then the new state persists."
+  ],
+  "coverageDeltaPercent": null,
+  "verdict": "pass",
+  "notes": "Automated E2E Playwright tests verified payment details visibility (TBC/BOG) on checkout page and professional ledger payment status persistence upon toggle."
+}
