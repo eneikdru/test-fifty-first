@@ -1,0 +1,34 @@
+{
+  "epics": [
+    {
+      "existingEpicId": null,
+      "title": "Resolve Postgres Container Port Allocation Failure",
+      "jtbd": "When the product environment is launched, I want the Docker containers to start without port binding conflicts, so that the application is healthy and available for use or testing.",
+      "kanoClass": "Must-Be",
+      "cynefinDomain": "clear",
+      "sixSigmaMetric": "Environment startup success rate",
+      "tocConstraintRef": "Development and evaluation environment availability",
+      "sourceIndex": 0,
+      "requirements": [
+        "R1: The docker-compose configuration for postgres-app must not fail to bind when port 18080 is already allocated on the host."
+      ],
+      "coverageComplete": true,
+      "slices": [
+        {
+          "title": "Fix postgres-app port allocation conflict",
+          "roleTag": "BARCAN-TAG-05",
+          "jtbd": "When implementing the port configuration fix for this epic, I want to change or parameterize the bound port, so that the container starts successfully even if 18080 is occupied.",
+          "acceptanceCriteria": "Given a host environment where port 18080 is already allocated\nWhen docker compose up is executed\nThen the postgres-app container maps to an available port successfully\nAnd the application database starts without a network binding error",
+          "leanValue": "essential",
+          "cynefinDomain": "clear",
+          "tocConstraintRef": "Docker network binding process",
+          "sixSigmaMetric": "Zero port conflict errors on startup",
+          "hasUi": false,
+          "requirementRefs": [
+            "R1"
+          ]
+        }
+      ]
+    }
+  ]
+}
