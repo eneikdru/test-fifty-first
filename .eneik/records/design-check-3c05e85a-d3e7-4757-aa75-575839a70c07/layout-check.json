@@ -1,0 +1,23 @@
+[
+  {
+    "id": "app-header",
+    "left": 0,
+    "top": 0,
+    "width": 375,
+    "height": 93
+  },
+  {
+    "id": "voice-heading",
+    "left": 41,
+    "top": 190,
+    "width": 293,
+    "height": 56
+  },
+  {
+    "id": "voice-interaction-section",
+    "left": 16,
+    "top": 129,
+    "width": 343,
+    "height": 426
+  }
+]
