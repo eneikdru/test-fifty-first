@@ -1,0 +1,318 @@
+openapi: 3.0.3
+info:
+  title: Booking Engine & Agent-Native MCP API
+  description: API specification for slot searching, atomic temporary holds, and MCP confirmations.
+  version: 1.0.0
+paths:
+  /api/v1/masters:
+    get:
+      summary: Search masters
+      operationId: searchMasters
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+            example: Tbilisi
+      responses:
+        '200':
+          description: List of masters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterDto'
+
+  /api/v1/masters/{masterId}/slots:
+    get:
+      summary: Get availability slots for a master
+      operationId: getMasterSlots
+      parameters:
+        - name: masterId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            example: AVAILABLE
+      responses:
+        '200':
+          description: List of availability slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotDto'
+
+  /api/v1/bookings/hold:
+    post:
+      summary: Create atomic temporary hold on slot
+      operationId: createHold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoldRequest'
+      responses:
+        '200':
+          description: Slot held successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDto'
+        '409':
+          description: Slot is no longer available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/confirm:
+    post:
+      summary: Confirm a held booking
+      operationId: confirmBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmBookingRequest'
+      responses:
+        '200':
+          description: Booking confirmed and slot locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDto'
+        '409':
+          description: Booking cannot be confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/mcp/confirm:
+    post:
+      summary: Confirm booking via MCP endpoint
+      operationId: mcpConfirm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpConfirmRequest'
+      responses:
+        '200':
+          description: Booking confirmed via MCP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDto'
+        '409':
+          description: Confirmation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/mcp/tools/call:
+    post:
+      summary: MCP Tool Execution Endpoint
+      operationId: mcpToolCall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpToolCallRequest'
+      responses:
+        '200':
+          description: Tool call executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpToolCallResponse'
+
+components:
+  schemas:
+    MasterDto:
+      type: object
+      required:
+        - id
+        - name
+        - city
+        - phone
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        facebookPageId:
+          type: string
+        description:
+          type: string
+
+    SlotDto:
+      type: object
+      required:
+        - id
+        - masterId
+        - startTime
+        - endTime
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+        masterId:
+          type: integer
+          format: int64
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    HoldRequest:
+      type: object
+      required:
+        - slotId
+        - masterId
+        - customerPhone
+        - serviceName
+        - priceGel
+      properties:
+        slotId:
+          type: integer
+          format: int64
+        masterId:
+          type: integer
+          format: int64
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        priceGel:
+          type: number
+          format: double
+
+    ConfirmBookingRequest:
+      type: object
+      required:
+        - bookingId
+      properties:
+        bookingId:
+          type: string
+
+    McpConfirmRequest:
+      type: object
+      required:
+        - bookingId
+      properties:
+        bookingId:
+          type: string
+        notes:
+          type: string
+
+    McpToolCallRequest:
+      type: object
+      required:
+        - name
+        - arguments
+      properties:
+        name:
+          type: string
+          example: confirm_booking
+        arguments:
+          type: object
+          additionalProperties: true
+
+    McpToolCallResponse:
+      type: object
+      required:
+        - content
+        - isError
+      properties:
+        content:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: text
+              text:
+                type: string
+        isError:
+          type: boolean
+          default: false
+
+    BookingDto:
+      type: object
+      required:
+        - id
+        - slotId
+        - masterId
+        - customerPhone
+        - serviceName
+        - priceGel
+        - status
+      properties:
+        id:
+          type: string
+        slotId:
+          type: integer
+          format: int64
+        masterId:
+          type: integer
+          format: int64
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        priceGel:
+          type: number
+          format: double
+        status:
+          type: string
+        holdExpiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

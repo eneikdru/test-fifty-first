@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface MasterProfileRepository extends JpaRepository<MasterProfile, Long> {
     List<MasterProfile> findByCity(String city);
+    List<MasterProfile> findByCityIgnoreCase(String city);
 }

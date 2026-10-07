@@ -17,6 +17,73 @@ security:
   - {}
 
 paths:
+  /webhooks/messenger:
+    get:
+      summary: Verify Messenger Webhook endpoint
+      description: Verification endpoint used by Facebook Messenger / WhatsApp webhook setup challenge.
+      operationId: verifyMessengerWebhookAlias
+      security: []
+      parameters:
+        - name: hub.mode
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: hub.verify_token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: hub.challenge
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification challenge response.
+          content:
+            text/plain:
+              schema:
+                type: string
+
+    post:
+      summary: Handle incoming Messenger Webhook events
+      description: Endpoint processing inbound events from Facebook Messenger and WhatsApp.
+      operationId: handleMessengerWebhookAlias
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessengerWebhookPayload'
+      responses:
+        '200':
+          description: Webhook event acknowledged successfully.
+
+  /webhooks/whatsapp:
+    post:
+      summary: Handle WhatsApp webhook events
+      operationId: handleWhatsAppWebhookAlias
+      responses:
+        '200':
+          description: Webhook event acknowledged.
+
+  /bookings/{bookingId}/reschedule:
+    post:
+      summary: Reschedule booking
+      operationId: rescheduleBookingAlias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleRequest'
+      responses:
+        '200':
+          description: Rescheduled.
+
   /api/v1/webhooks/messenger:
     get:
       summary: Verify Messenger Webhook endpoint
@@ -256,6 +323,56 @@ components:
       bearerFormat: JWT
 
   schemas:
+    RescheduleRequest:
+      type: object
+      required:
+        - bookingId
+        - requestedStartTime
+        - requestedEndTime
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        requestedStartTime:
+          type: string
+          format: date-time
+        requestedEndTime:
+          type: string
+          format: date-time
+
+    RescheduleResponse:
+      type: object
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+
+    MessengerWebhookPayload:
+      type: object
+      properties:
+        object:
+          type: string
+
+    WhatsAppWebhookPayload:
+      type: object
+      properties:
+        object:
+          type: string
+
+    NotificationReminderRequest:
+      type: object
+      properties:
+        bookingId:
+          type: string
+
+    ReminderActionRequest:
+      type: object
+      properties:
+        action:
+          type: string
+
     RescheduleRequestPayload:
       type: object
       required:
