@@ -1,0 +1,36 @@
+{
+  "epics": [
+    {
+      "existingEpicId": null,
+      "title": "Unify Datastore Engine Across Runtime and Tests",
+      "jtbd": "When using the application, I want the system to be tested against the exact same database engine used in production, so that runtime errors from datastore incompatibilities are prevented.",
+      "kanoClass": "Must-Be",
+      "cynefinDomain": "clear",
+      "sixSigmaMetric": "Zero late-stage datastore incompatibility defects",
+      "tocConstraintRef": "Test and production environment parity",
+      "sourceIndex": 0,
+      "requirements": [
+        "R1: The runtime contract explicitly declares PostgreSQL as the datastore.",
+        "R2: The test suite and application configuration run against PostgreSQL, removing any H2 dependency."
+      ],
+      "coverageComplete": true,
+      "slices": [
+        {
+          "title": "Patch runtime artifacts and test suite for PostgreSQL parity",
+          "roleTag": "BARCAN-TAG-02",
+          "jtbd": "When implementing the datastore alignment for this epic, I want to remove H2 and configure the tests to use PostgreSQL, so that runtime incompatibilities are caught during the build phase.",
+          "acceptanceCriteria": "Given the application test suite is executed\nWhen the database is initialized\nThen it provisions and runs against a PostgreSQL engine instead of H2\nGiven the project source code\nWhen the runtime contract and configurations are inspected\nThen they all explicitly specify and depend on PostgreSQL",
+          "leanValue": "essential",
+          "cynefinDomain": "clear",
+          "tocConstraintRef": "Test configuration parity",
+          "sixSigmaMetric": "100% database engine consistency across environments",
+          "hasUi": false,
+          "requirementRefs": [
+            "R1",
+            "R2"
+          ]
+        }
+      ]
+    }
+  ]
+}
