@@ -17,15 +17,9 @@ public class PrivacyController {
     private final PrivacyService privacyService;
     private final Clock clock;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public PrivacyController(PrivacyService privacyService) {
-        this(privacyService, Clock.systemUTC());
-    }
-
-    @org.springframework.beans.factory.annotation.Autowired
-    public PrivacyController(PrivacyService privacyService, Clock clock) {
+    public PrivacyController(PrivacyService privacyService, @org.springframework.beans.factory.annotation.Autowired(required = false) Clock clock) {
         this.privacyService = privacyService;
-        this.clock = clock;
+        this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
     @PostMapping("/exports")

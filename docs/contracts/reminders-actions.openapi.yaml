@@ -17,7 +17,7 @@ security:
   - {}
 
 paths:
-  /api/v1/webhooks/messenger:
+  /webhooks/messenger:
     get:
       summary: Verify Messenger Webhook endpoint
       description: Verification endpoint used by Facebook Messenger / WhatsApp webhook setup challenge.
@@ -64,7 +64,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MessengerWebhookEvent'
+              $ref: '#/components/schemas/MessengerWebhookPayload'
       responses:
         '200':
           description: Webhook event acknowledged successfully.
@@ -83,136 +83,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/notifications/reminders/send:
+  /webhooks/whatsapp:
+    get:
+      summary: Verify WhatsApp Webhook
+      responses:
+        '200':
+          description: Verified
     post:
-      summary: Send or schedule appointment reminder
-      description: Triggers an immediate or scheduled appointment reminder notification to the client or master via Messenger/WhatsApp.
-      operationId: sendReminderNotification
-      security:
-        - BearerAuth: []
+      summary: Receive WhatsApp Webhook Event
+      responses:
+        '200':
+          description: Event received
+
+  /api/v1/webhooks/messenger:
+    get:
+      summary: Verify Messenger Webhook endpoint (API v1 alias)
+      responses:
+        '200':
+          description: Verified
+    post:
+      summary: Handle incoming Messenger Webhook events (API v1 alias)
+      responses:
+        '200':
+          description: Event received
+
+  /bookings/{bookingId}/reschedule:
+    post:
+      summary: Reschedule a booking
+      description: Action endpoint to reschedule a booking to a new time slot.
+      operationId: rescheduleBookingCanonical
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReminderNotificationPayload'
+              $ref: '#/components/schemas/RescheduleRequest'
       responses:
         '200':
-          description: Reminder notification dispatched or scheduled.
+          description: Booking rescheduled successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReminderNotificationResult'
-        '400':
-          description: Invalid payload or parameters.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Booking or recipient not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/bookings/{id}/confirm:
-    post:
-      summary: Confirm a booking
-      description: Action endpoint to confirm a pending booking directly or via messenger quick action.
-      operationId: confirmBooking
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique identifier of the booking.
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmationRequestPayload'
-      responses:
-        '200':
-          description: Booking confirmed successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookingResponsePayload'
-        '400':
-          description: Booking cannot be confirmed in its current state.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Booking not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/bookings/{id}/cancel:
-    post:
-      summary: Cancel a booking
-      description: Action endpoint to cancel a booking directly or via messenger quick action.
-      operationId: cancelBooking
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique identifier of the booking.
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CancellationRequestPayload'
-      responses:
-        '200':
-          description: Booking cancelled successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookingResponsePayload'
-        '400':
-          description: Booking cannot be cancelled in its current state.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Booking not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/RescheduleResponse'
 
   /api/v1/bookings/{id}/reschedule:
     post:
-      summary: Reschedule a booking
+      summary: Reschedule a booking (API v1 alias)
       description: Action endpoint to reschedule a booking to a new time slot.
       operationId: rescheduleBooking
-      security:
-        - BearerAuth: []
-        - {}
       parameters:
         - name: id
           in: path
           required: true
-          description: Unique identifier of the booking.
           schema:
             type: string
             format: uuid
@@ -229,24 +158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BookingResponsePayload'
-        '400':
-          description: Invalid slot or payload validation error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Booking not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Time slot conflict or race condition.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -256,6 +167,76 @@ components:
       bearerFormat: JWT
 
   schemas:
+    RescheduleRequest:
+      type: object
+      required:
+        - bookingId
+        - requestedStartTime
+        - requestedEndTime
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        requestedStartTime:
+          type: string
+          format: date-time
+        requestedEndTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+
+    RescheduleResponse:
+      type: object
+      required:
+        - bookingId
+        - status
+        - startTime
+        - endTime
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    MessengerWebhookPayload:
+      type: object
+      required:
+        - object
+        - entry
+      properties:
+        object:
+          type: string
+        entry:
+          type: array
+          items:
+            type: object
+
+    WhatsAppWebhookPayload:
+      type: object
+      properties:
+        object:
+          type: string
+
+    NotificationReminderRequest:
+      type: object
+      properties:
+        bookingId:
+          type: string
+
+    ReminderActionRequest:
+      type: object
+      properties:
+        bookingId:
+          type: string
+
     RescheduleRequestPayload:
       type: object
       required:
@@ -266,21 +247,14 @@ components:
         bookingId:
           type: string
           format: uuid
-          description: ID of the booking to be rescheduled.
         requestedSlotStart:
           type: string
           format: date-time
-          description: ISO 8601 timestamp for the proposed new slot start time.
-          example: "2026-10-15T14:00:00Z"
         requestedSlotEnd:
           type: string
           format: date-time
-          description: ISO 8601 timestamp for the proposed new slot end time.
-          example: "2026-10-15T15:00:00Z"
         reason:
           type: string
-          description: Optional reason or notes for rescheduling.
-          example: "Client requested time change"
 
     CancellationRequestPayload:
       type: object
@@ -288,11 +262,8 @@ components:
         bookingId:
           type: string
           format: uuid
-          description: Optional confirmation of booking ID in body.
         reason:
           type: string
-          description: Reason for cancellation.
-          example: "Schedule conflict"
 
     ConfirmationRequestPayload:
       type: object
@@ -300,11 +271,6 @@ components:
         bookingId:
           type: string
           format: uuid
-          description: Optional confirmation of booking ID in body.
-        notes:
-          type: string
-          description: Optional confirmation notes.
-          example: "Confirmed via Messenger quick reply"
 
     ReminderNotificationPayload:
       type: object
@@ -317,31 +283,12 @@ components:
         bookingId:
           type: string
           format: uuid
-          description: Unique identifier of the associated booking.
-        masterId:
-          type: string
-          format: uuid
-          description: Unique identifier of the master.
-        clientId:
-          type: string
-          format: uuid
-          description: Unique identifier of the client.
         channel:
           type: string
-          enum: [FACEBOOK_MESSENGER, WHATSAPP]
-          description: Messaging channel for delivery.
         recipientId:
           type: string
-          description: Recipient phone number (+995 format) or messenger scoped ID.
-          example: "+995599123456"
-        scheduledAt:
-          type: string
-          format: date-time
-          description: Time when reminder should be sent.
         reminderType:
           type: string
-          enum: [UPCOMING_BOOKING, ACTION_REQUIRED, RESCHEDULE_PROPOSAL]
-          description: Type of notification reminder.
 
     ReminderNotificationResult:
       type: object
@@ -353,16 +300,12 @@ components:
       properties:
         notificationId:
           type: string
-          format: uuid
         bookingId:
           type: string
-          format: uuid
         status:
           type: string
-          enum: [QUEUED, SENT, DELIVERED, FAILED]
         sentAt:
           type: string
-          format: date-time
 
     BookingResponsePayload:
       type: object
@@ -375,113 +318,32 @@ components:
       properties:
         bookingId:
           type: string
-          format: uuid
-        masterId:
-          type: string
-          format: uuid
-        clientId:
-          type: string
-          format: uuid
-        serviceId:
-          type: string
-          format: uuid
         status:
           type: string
-          enum: [PENDING, CONFIRMED, CANCELLED, RESCHEDULED]
         slotStart:
           type: string
-          format: date-time
         slotEnd:
           type: string
-          format: date-time
         updatedAt:
           type: string
-          format: date-time
 
     MessengerWebhookEvent:
       type: object
-      required:
-        - object
-        - entry
       properties:
         object:
           type: string
-          example: page
-        entry:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEntry'
 
     WebhookEntry:
       type: object
-      required:
-        - id
-        - time
-        - messaging
       properties:
         id:
           type: string
-          example: "102938475612345"
-        time:
-          type: integer
-          format: int64
-          example: 1770000000000
-        messaging:
-          type: array
-          items:
-            $ref: '#/components/schemas/MessagingItem'
 
     MessagingItem:
       type: object
-      required:
-        - sender
-        - recipient
-        - timestamp
       properties:
         sender:
           type: object
-          required:
-            - id
-          properties:
-            id:
-              type: string
-              example: "psid_123456789"
-        recipient:
-          type: object
-          required:
-            - id
-          properties:
-            id:
-              type: string
-              example: "page_987654321"
-        timestamp:
-          type: integer
-          format: int64
-          example: 1770000000000
-        message:
-          type: object
-          properties:
-            mid:
-              type: string
-              example: "m_mid.123456789"
-            text:
-              type: string
-              example: "Confirm booking"
-            quick_reply:
-              type: object
-              properties:
-                payload:
-                  type: string
-                  example: "ACTION_CONFIRM_BOOKING_123"
-        postback:
-          type: object
-          properties:
-            title:
-              type: string
-              example: "Confirm"
-            payload:
-              type: string
-              example: "ACTION_CONFIRM_BOOKING_123"
 
     ErrorResponse:
       type: object
@@ -492,16 +354,7 @@ components:
       properties:
         code:
           type: string
-          example: "INVALID_PAYLOAD"
         message:
           type: string
-          example: "The provided reschedule slot is invalid or in the past."
-        details:
-          type: array
-          items:
-            type: string
-          example: ["requestedSlotStart must be a future timestamp"]
         timestamp:
           type: string
-          format: date-time
-          example: "2026-10-06T12:15:00Z"
