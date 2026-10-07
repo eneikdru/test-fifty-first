@@ -1,0 +1,22 @@
+{
+  "verdicts": [
+    {
+      "sourceIndex": 0,
+      "verdict": "block",
+      "criticalReason": "Modifies PrivacyController and RemindersActionsApiContractTest, which is a direct violation of the DoD that states the PR diff must contain only source, config, test, or documentation files needed for this slice. These files are unrelated to Booking Engine and Concurrency.",
+      "concerns": []
+    },
+    {
+      "sourceIndex": 1,
+      "verdict": "approve",
+      "criticalReason": "",
+      "concerns": []
+    },
+    {
+      "sourceIndex": 2,
+      "verdict": "block",
+      "criticalReason": "Modifies docs/contracts/reminders-actions.openapi.yaml and PrivacyController, violating the DoD which says the PR diff must contain only source, config, test, or documentation files needed for this slice. These files are completely unrelated to the Mobile-First Profile UI slice.",
+      "concerns": []
+    }
+  ]
+}
