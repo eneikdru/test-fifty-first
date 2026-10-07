@@ -4,11 +4,11 @@ import fs from 'fs';
 import path from 'path';
 
 async function run() {
-  const outputDir = path.resolve('../.eneik/records/design-check-aac7ba3f-3637-4221-bfef-2934cc4cd363');
+  const outputDir = path.resolve('../.eneik/records/design-check-3c05e85a-d3e7-4757-aa75-575839a70c07');
   fs.mkdirSync(outputDir, { recursive: true });
 
   console.log('Starting preview server...');
-  const npmPath = 'npm';
+  const npmPath = '/home/jules/.nvm/versions/node/v22.22.1/bin/npm';
   const server = spawn(npmPath, ['run', 'preview', '--', '--port', '4173'], {
     cwd: path.resolve('.'),
     stdio: 'inherit',
@@ -24,24 +24,25 @@ async function run() {
   try {
     // 1. Desktop Screenshot (1440px)
     const pageDesktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await pageDesktop.goto('http://localhost:4173/?tab=profile');
-    const profileTabBtn = pageDesktop.locator('button:has-text("Master Profile")');
-    await profileTabBtn.click();
-    await pageDesktop.waitForSelector('#master-profile-section');
+    await pageDesktop.goto('http://localhost:4173');
+    // Switch to Voice tab
+    const voiceTabBtn = pageDesktop.locator('button:has-text("Voice Booking")');
+    await voiceTabBtn.click();
+    await pageDesktop.waitForSelector('#voice-interaction-section');
     await pageDesktop.screenshot({ path: path.join(outputDir, 'desktop-1440.png'), fullPage: true });
     console.log('Desktop screenshot saved.');
 
     // 2. Mobile Screenshot (375px)
     const pageMobile = await browser.newPage({ viewport: { width: 375, height: 667 } });
-    await pageMobile.goto('http://localhost:4173/?tab=profile');
-    const profileTabBtnMobile = pageMobile.locator('button:has-text("Master Profile")');
-    await profileTabBtnMobile.click();
-    await pageMobile.waitForSelector('#master-profile-section');
+    await pageMobile.goto('http://localhost:4173');
+    const voiceTabBtnMobile = pageMobile.locator('button:has-text("Voice Booking")');
+    await voiceTabBtnMobile.click();
+    await pageMobile.waitForSelector('#voice-interaction-section');
     await pageMobile.screenshot({ path: path.join(outputDir, 'mobile-375.png'), fullPage: true });
     console.log('Mobile screenshot saved.');
 
     // 3. Layout Check JSON (bounding boxes on 375px mobile)
-    const layoutElements = ['#app-header', '#profile-heading', '#master-profile-section'];
+    const layoutElements = ['#app-header', '#voice-heading', '#voice-interaction-section'];
     const layoutCheck = [];
 
     for (const selector of layoutElements) {
