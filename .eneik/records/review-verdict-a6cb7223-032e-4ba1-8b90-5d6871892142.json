@@ -1,0 +1,26 @@
+{
+  "verdicts": [
+    {
+      "sourceIndex": 0,
+      "verdict": "approve",
+      "criticalReason": "",
+      "concerns": [
+        {
+          "text": "Embedded Zonky database adds test execution overhead compared to lightweight mock or memory profiles, though necessary for PostgreSQL alignment",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "sourceIndex": 1,
+      "verdict": "approve",
+      "criticalReason": "",
+      "concerns": [
+        {
+          "text": "Concurrency test relies on fixed Thread.sleep / latch timeouts which could potentially flake on slow CI runners",
+          "severity": "low"
+        }
+      ]
+    }
+  ]
+}
