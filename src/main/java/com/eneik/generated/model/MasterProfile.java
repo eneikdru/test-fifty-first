@@ -32,6 +32,12 @@ public class MasterProfile {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @jakarta.persistence.Transient
+    private String address;
+
+    @jakarta.persistence.Transient
+    private String photos;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -44,6 +50,17 @@ public class MasterProfile {
         this.phone = phone;
         this.facebookPageId = facebookPageId;
         this.description = description;
+        this.createdAt = createdAt;
+    }
+
+    public MasterProfile(String name, String city, String phone, String facebookPageId, String description, String address, String photos, OffsetDateTime createdAt) {
+        this.name = name;
+        this.city = city;
+        this.phone = phone;
+        this.facebookPageId = facebookPageId;
+        this.description = description;
+        this.address = address;
+        this.photos = photos;
         this.createdAt = createdAt;
     }
 
@@ -93,6 +110,22 @@ public class MasterProfile {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(String photos) {
+        this.photos = photos;
     }
 
     public OffsetDateTime getCreatedAt() {
