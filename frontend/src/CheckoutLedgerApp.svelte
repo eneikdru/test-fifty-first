@@ -4,13 +4,16 @@
   import LedgerUI from './components/LedgerUI.svelte';
   import VoiceInteractionUI from './components/VoiceInteractionUI.svelte';
   import RescheduleCancelUI from './components/RescheduleCancelUI.svelte';
+  import CalendarManagementUI from './components/CalendarManagementUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule' | 'calendar'
 
   onMount(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
+      if (urlParams.get('tab') === 'calendar' || urlParams.get('page') === 'calendar') {
+        activeTab = 'calendar';
+      } else if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
         activeTab = 'reschedule';
       }
     }
@@ -55,6 +58,14 @@
       >
         Reschedule & Cancel (🗓️)
       </button>
+      <button
+        type="button"
+        class="tab-btn {activeTab === 'calendar' ? 'active' : ''}"
+        aria-pressed={activeTab === 'calendar'}
+        on:click={() => activeTab = 'calendar'}
+      >
+        Professional Calendar (📅)
+      </button>
     </nav>
   </header>
 
@@ -67,6 +78,8 @@
       <VoiceInteractionUI />
     {:else if activeTab === 'reschedule'}
       <RescheduleCancelUI />
+    {:else if activeTab === 'calendar'}
+      <CalendarManagementUI />
     {/if}
   </main>
 </div>

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "app-header",
+    "left": 0,
+    "top": 0,
+    "width": 375,
+    "height": 229
+  },
+  {
+    "id": "calendar-heading",
+    "left": 41,
+    "top": 270,
+    "width": 293,
+    "height": 84
+  },
+  {
+    "id": "calendar-section",
+    "left": 16,
+    "top": 245,
+    "width": 343,
+    "height": 1358
+  }
+]
