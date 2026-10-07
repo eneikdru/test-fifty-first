@@ -11,6 +11,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@io.zonky.test.db.AutoConfigureEmbeddedDatabase(type = io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseType.POSTGRES)
 @TestPropertySource(locations = "classpath:application-test.properties")
 @Transactional
 public class TelemetryServiceTest {
