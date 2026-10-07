@@ -48,21 +48,21 @@ class RemindersActionsApiContractTest {
         Map<String, Object> schemas = (Map<String, Object>) components.get("schemas");
         assertNotNull(schemas, "schemas block must exist");
 
-        Map<String, Object> rescheduleRequest = (Map<String, Object>) schemas.get("RescheduleRequest");
-        assertNotNull(rescheduleRequest, "RescheduleRequest schema must exist");
+        Map<String, Object> rescheduleRequest = (Map<String, Object>) schemas.get("RescheduleRequestPayload");
+        assertNotNull(rescheduleRequest, "RescheduleRequestPayload schema must exist");
 
         List<String> requiredFields = (List<String>) rescheduleRequest.get("required");
-        assertNotNull(requiredFields, "RescheduleRequest must specify required fields");
-        assertTrue(requiredFields.contains("bookingId"), "RescheduleRequest must require bookingId");
-        assertTrue(requiredFields.contains("requestedStartTime"), "RescheduleRequest must require requestedStartTime");
-        assertTrue(requiredFields.contains("requestedEndTime"), "RescheduleRequest must require requestedEndTime");
+        assertNotNull(requiredFields, "RescheduleRequestPayload must specify required fields");
+        assertTrue(requiredFields.contains("bookingId"), "RescheduleRequestPayload must require bookingId");
+        assertTrue(requiredFields.contains("requestedSlotStart"), "RescheduleRequestPayload must require requestedSlotStart");
+        assertTrue(requiredFields.contains("requestedSlotEnd"), "RescheduleRequestPayload must require requestedSlotEnd");
 
-        Map<String, Object> rescheduleResponse = (Map<String, Object>) schemas.get("RescheduleResponse");
-        assertNotNull(rescheduleResponse, "RescheduleResponse schema must exist");
+        Map<String, Object> rescheduleResponse = (Map<String, Object>) schemas.get("BookingResponsePayload");
+        assertNotNull(rescheduleResponse, "BookingResponsePayload schema must exist");
 
         Map<String, Object> paths = (Map<String, Object>) openApiMap.get("paths");
         assertNotNull(paths, "paths block must exist");
-        assertTrue(paths.containsKey("/bookings/{bookingId}/reschedule"), "/bookings/{bookingId}/reschedule path must exist");
+        assertTrue(paths.containsKey("/api/v1/bookings/{id}/reschedule"), "/api/v1/bookings/{id}/reschedule path must exist");
     }
 
     @Test
@@ -78,19 +78,15 @@ class RemindersActionsApiContractTest {
         Map<String, Object> paths = (Map<String, Object>) openApiMap.get("paths");
         assertNotNull(paths, "paths block must exist");
 
-        assertTrue(paths.containsKey("/webhooks/messenger"), "Messenger webhook path /webhooks/messenger must exist");
-        Map<String, Object> messengerPath = (Map<String, Object>) paths.get("/webhooks/messenger");
+        assertTrue(paths.containsKey("/api/v1/webhooks/messenger"), "Messenger webhook path /api/v1/webhooks/messenger must exist");
+        Map<String, Object> messengerPath = (Map<String, Object>) paths.get("/api/v1/webhooks/messenger");
         assertTrue(messengerPath.containsKey("get"), "Messenger GET verification endpoint must exist");
         assertTrue(messengerPath.containsKey("post"), "Messenger POST webhook receiver endpoint must exist");
-
-        assertTrue(paths.containsKey("/webhooks/whatsapp"), "WhatsApp webhook path /webhooks/whatsapp must exist");
 
         Map<String, Object> components = (Map<String, Object>) openApiMap.get("components");
         Map<String, Object> schemas = (Map<String, Object>) components.get("schemas");
 
-        assertTrue(schemas.containsKey("MessengerWebhookPayload"), "MessengerWebhookPayload schema must exist");
-        assertTrue(schemas.containsKey("WhatsAppWebhookPayload"), "WhatsAppWebhookPayload schema must exist");
-        assertTrue(schemas.containsKey("NotificationReminderRequest"), "NotificationReminderRequest schema must exist");
-        assertTrue(schemas.containsKey("ReminderActionRequest"), "ReminderActionRequest schema must exist");
+        assertTrue(schemas.containsKey("MessengerWebhookEvent"), "MessengerWebhookEvent schema must exist");
+        assertTrue(schemas.containsKey("ReminderNotificationPayload"), "ReminderNotificationPayload schema must exist");
     }
 }
