@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @TestPropertySource(locations = "classpath:application-test.properties")
+@io.zonky.test.db.AutoConfigureEmbeddedDatabase(type = io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseType.POSTGRES)
 @Transactional
 public class GeorgianDataSeederTest {
 
