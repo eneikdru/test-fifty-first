@@ -4,13 +4,16 @@
   import LedgerUI from './components/LedgerUI.svelte';
   import VoiceInteractionUI from './components/VoiceInteractionUI.svelte';
   import RescheduleCancelUI from './components/RescheduleCancelUI.svelte';
+  import MasterProfileUI from './components/MasterProfileUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule' | 'profile'
 
   onMount(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
+      if (urlParams.get('tab') === 'profile' || urlParams.get('page') === 'profile') {
+        activeTab = 'profile';
+      } else if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
         activeTab = 'reschedule';
       }
     }
@@ -41,6 +44,14 @@
       </button>
       <button
         type="button"
+        class="tab-btn {activeTab === 'profile' ? 'active' : ''}"
+        aria-pressed={activeTab === 'profile'}
+        on:click={() => activeTab = 'profile'}
+      >
+        Master Profile (👤)
+      </button>
+      <button
+        type="button"
         class="tab-btn {activeTab === 'voice' ? 'active' : ''}"
         aria-pressed={activeTab === 'voice'}
         on:click={() => activeTab = 'voice'}
@@ -63,6 +74,8 @@
       <CheckoutUI />
     {:else if activeTab === 'ledger'}
       <LedgerUI />
+    {:else if activeTab === 'profile'}
+      <MasterProfileUI />
     {:else if activeTab === 'voice'}
       <VoiceInteractionUI />
     {:else if activeTab === 'reschedule'}
