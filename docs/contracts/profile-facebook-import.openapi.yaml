@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Profile and Facebook Import API Contract
+  version: 1.0.0
+  description: >
+    API contract for master profile provisioning via phone login and profile import from Facebook
+    business pages (fetching description, address, and photos).
+paths:
+  /api/profile/phone-login:
+    post:
+      summary: Provision or authenticate master account via phone number
+      operationId: phoneLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneLoginRequest'
+      responses:
+        '200':
+          description: Master profile provisioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterProfileResponse'
+        '400':
+          description: Invalid request parameter (e.g. missing phone number)
+
+  /api/profile/import/facebook:
+    post:
+      summary: Import master profile details (description, address, photos) from Facebook page
+      operationId: importFacebook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacebookImportRequest'
+      responses:
+        '200':
+          description: Master profile enriched from Facebook business page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterProfileResponse'
+        '400':
+          description: Invalid access token or request payload
+
+components:
+  schemas:
+    PhoneLoginRequest:
+      type: object
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          example: "+995599123456"
+        name:
+          type: string
+          example: "Nino"
+        city:
+          type: string
+          example: "Tbilisi"
+
+    FacebookImportRequest:
+      type: object
+      required:
+        - facebookToken
+      properties:
+        facebookToken:
+          type: string
+          example: "valid-fb-token-12345"
+        facebookPageId:
+          type: string
+          example: "fb-page-tbilisi-salon"
+        masterId:
+          type: integer
+          format: int64
+          example: 1
+        phone:
+          type: string
+          example: "+995599123456"
+
+    MasterProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        facebookPageId:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
