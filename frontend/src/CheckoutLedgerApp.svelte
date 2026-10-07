@@ -4,14 +4,17 @@
   import LedgerUI from './components/LedgerUI.svelte';
   import VoiceInteractionUI from './components/VoiceInteractionUI.svelte';
   import RescheduleCancelUI from './components/RescheduleCancelUI.svelte';
+  import CalendarManagementUI from './components/CalendarManagementUI.svelte';
 
-  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule'
+  let activeTab = 'checkout'; // 'checkout' | 'ledger' | 'voice' | 'reschedule' | 'calendar'
 
   onMount(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('token') || urlParams.get('page') === 'reschedule' || urlParams.get('tab') === 'reschedule') {
         activeTab = 'reschedule';
+      } else if (urlParams.get('page') === 'calendar' || urlParams.get('tab') === 'calendar') {
+        activeTab = 'calendar';
       }
     }
   });
@@ -20,7 +23,7 @@
 <div class="app-container">
   <header class="app-header" id="app-header">
     <div class="brand-title">
-      <h1>Georgian Masters Platform · Voice & Checkout</h1>
+      <h1>Georgian Masters Platform · Professional Dashboard</h1>
     </div>
     <nav class="nav-tabs" aria-label="Main Navigation">
       <button
@@ -38,6 +41,14 @@
         on:click={() => activeTab = 'ledger'}
       >
         Professional Ledger
+      </button>
+      <button
+        type="button"
+        class="tab-btn {activeTab === 'calendar' ? 'active' : ''}"
+        aria-pressed={activeTab === 'calendar'}
+        on:click={() => activeTab = 'calendar'}
+      >
+        Calendar Management (📅)
       </button>
       <button
         type="button"
@@ -63,6 +74,8 @@
       <CheckoutUI />
     {:else if activeTab === 'ledger'}
       <LedgerUI />
+    {:else if activeTab === 'calendar'}
+      <CalendarManagementUI />
     {:else if activeTab === 'voice'}
       <VoiceInteractionUI />
     {:else if activeTab === 'reschedule'}
