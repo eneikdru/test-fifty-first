@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Master Catalog and Pricing API
+  version: 1.0.0
+  description: >
+    API contract for the beauty salon master catalog, services, pricing in GEL, and multilingual support.
+paths:
+  /api/masters/{masterId}/services:
+    get:
+      summary: Get all services for a master
+      operationId: getMasterServices
+      parameters:
+        - name: masterId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: Accept-Language
+          in: header
+          required: false
+          schema:
+            type: string
+            default: en
+            enum: [en, ka, ru]
+          description: Preferred language for service names and descriptions.
+      responses:
+        '200':
+          description: A list of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterServiceResponse'
+    post:
+      summary: Add a new service for a master
+      operationId: addMasterService
+      parameters:
+        - name: masterId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterServiceRequest'
+      responses:
+        '201':
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterServiceResponse'
+
+components:
+  schemas:
+    MasterServiceRequest:
+      type: object
+      required:
+        - priceGel
+        - durationMinutes
+      properties:
+        nameEn:
+          type: string
+        nameKa:
+          type: string
+        nameRu:
+          type: string
+        descriptionEn:
+          type: string
+        descriptionKa:
+          type: string
+        descriptionRu:
+          type: string
+        priceGel:
+          type: number
+          format: double
+        durationMinutes:
+          type: integer
+    MasterServiceResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        masterId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        priceGel:
+          type: number
+          format: double
+        durationMinutes:
+          type: integer
