@@ -1,4 +1,5 @@
 package com.eneik.generated.seeding;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 
 import com.eneik.generated.model.MasterProfile;
 import com.eneik.generated.privacy.dto.PrivacyExportRequest;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @TestPropertySource(locations = "classpath:application-test.properties")
+@AutoConfigureEmbeddedDatabase(type = AutoConfigureEmbeddedDatabase.DatabaseType.POSTGRES)
 @Transactional
 public class MasterProfileQaTest {
 
